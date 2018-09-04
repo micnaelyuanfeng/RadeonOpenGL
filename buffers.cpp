@@ -1,6 +1,27 @@
 #include <iostream>
+#include <string>
+#include <assert.h>
 #include "GL/glew.h" //should above glut
 #include "GL/glut.h"
+#include "SDL/SDL.h"
+
+
+const char* VERTEXT_SHADER =
+"#version 330 core\n"
+"layout(location = 0) in vec3 vertexPosition_modelspace;\n"
+"void main()\n"
+"{\n"
+"	gl_Position.xyz = vertexPosition_modelspace;\n"
+"	gl_position     = 1.0;\n"
+"}\n";
+
+const char* FRAGMENT_SHADER = 
+"#version 330 core\n"
+"out vec3 color;\n"
+"void main()\n"
+"{\n"
+"color = vec3(0,0,0);\n"
+"}\n";
 
 //linear interpolation is done by gfx card
 
@@ -12,17 +33,18 @@ using namespace std;
 // -1.0 to 1.0 for x, y, z
 //Normal way
 GLfloat vertices[] = { -0.5, -0.5, 0.0, //v1
-						0.0,  0.0, 1.0, //v1c
+						//0.0,  1.0, 1.0, //v1c
 						0.5, -0.5, 0.0, //v2
-						0.0,  0.0, 1.0, //v2c
+						//0.0,  0.0, 1.0, //v2c
 						0.0,  0.5, 0.0,
-						0.0,  0.0, 1.0 ,
-						-0.7, 0.0, 0.0, //v1
-						0.0,  0.0, 1.0, //v1c
-						0.5, 0.0, 0.0, //v2
-						0.0,  0.0, 1.0, //v2c
-						0.0,  0.5, 0.0,
-						0.0,  0.0, 1.0 };//v3
+	//0.0,  1.0, 1.0 ,
+	-0.7, 0.0, 0.0, //v1
+	//0.0,  0.0, 1.0, //v1c
+	0.5, 0.0, 0.0, //v2
+	//0.0,  0.0, 1.0, //v2c
+	0.0,  0.5, 0.0,
+	//0.0,  1.0, 1.0 };//v3
+};
 //Color = RGB channels R      G    B
 
 GLuint VBOID;
@@ -33,20 +55,22 @@ void display()
 	//reset for redraw                need to add this if using depth information
 	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
+	//load shader
+	
+
 	//Start Drawing
 	//Tell openGl read vertices data from an array
-	glEnableClientState(GL_VERTEX_ARRAY);
-	glEnableClientState(GL_COLOR_ARRAY);
+	glEnableVertexAttribArray(0);
+	//glEnableClientState(GL_COLOR_ARRAY);
 
 	//new solution to draw using data in gfx buffer
 	glBindBuffer(GL_ARRAY_BUFFER, VBOID); //activate buffer
 
-
 	//Tell openGL structure of array = how to parse the data
 	// 3 = 3D; 2 = 2D 
 	// e.g each 3 value in this array represents a vertices
-	glVertexPointer(3, GL_FLOAT, 6 * sizeof(GLfloat), 0);// 0 is starting address of the buffer
-	glColorPointer(3, GL_FLOAT, 24, (GLvoid*)(VBOID + 3));
+	glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 0, (void*)0);// 0 is starting address of the buffer
+	//glColorPointer(3, GL_FLOAT,  6 * sizeof(GLfloat), (GLvoid*)(sizeof(GLfloat) * 3));
 	//Draw shape type
 	//Linear interpolation and restariztion
 
@@ -54,10 +78,10 @@ void display()
 	//glDrawArrays(GL_TRIANGLES, 1, 3);
 	//glDrawArrays(GL_TRIANGLES, 2, 3);
 
-	glDisableClientState(GL_VERTEX_ARRAY);
-	glDisableClientState(GL_COLOR_ARRAY);
+	glDisableVertexAttribArray(0);
+	//glDisableClientState(GL_VERTEX_ARRAY);
+	//glDisableClientState(GL_COLOR_ARRAY);
 
-	glutSwapBuffers();
 }
 
 void reshape(int w, int h)
@@ -68,7 +92,7 @@ void reshape(int w, int h)
 void initOpenGL()
 {
 	//set background color only
-	glClearColor(1.0, 0.0, 0.0, 1.0);
+	glClearColor(0.0, 1.0, 0.0, 0.0);
 
 	//Tell ogl use depth information
 	//ogl will do depth test
@@ -82,7 +106,9 @@ void initOpenGL()
 	/*
 		1. ask gfx for a piece of memory to put data which required for later rendering
 	*/
-
+	GLuint VertextArrayId;
+	glGenVertexArrays(1, &VertextArrayId);
+	glBindVertexArray(VertextArrayId);
 	//In case of many triangles to draw, copying data hurt performance,
 	//then use buffer and just copy once
 	// num of buffer and handle
@@ -90,7 +116,39 @@ void initOpenGL()
 	glBindBuffer(GL_ARRAY_BUFFER, VBOID);                     //not change very often
 	glBufferData(GL_ARRAY_BUFFER, sizeof(vertices), vertices, GL_STATIC_DRAW);
 	//unbined buffer
-	glBindBuffer(GL_ARRAY_BUFFER, 0);
+	//glBindBuffer(GL_ARRAY_BUFFER, 0);
+
+	//load shader
+	GLint  result = GL_FALSE;
+	GLuint VertexShaderID = glCreateShader(GL_VERTEX_SHADER);
+	GLuint FragmentShaderId = glCreateShader(GL_FRAGMENT_SHADER);
+
+	int InfoLogLength = 0;
+
+	glShaderSource(VertexShaderID, 1, &VERTEXT_SHADER, NULL);
+	assert(result != GL_TRUE);
+	glCompileShader(VertexShaderID);
+
+	glGetShaderiv(VertexShaderID, GL_COMPILE_STATUS, &result);
+	glGetShaderiv(VertexShaderID, GL_INFO_LOG_LENGTH, &InfoLogLength);
+
+	result = GL_FALSE;
+	glShaderSource(FragmentShaderId, 1, &FRAGMENT_SHADER, NULL);
+	assert(result != GL_TRUE);
+	glCompileShader(FragmentShaderId);
+
+	glGetShaderiv(FragmentShaderId, GL_COMPILE_STATUS, &result);
+	glGetShaderiv(FragmentShaderId, GL_INFO_LOG_LENGTH, &InfoLogLength);
+
+	//Link
+	GLuint programID = glCreateProgram();
+
+	glAttachShader(programID, VertexShaderID);
+	glAttachShader(programID, FragmentShaderId);
+	glLinkProgram(programID);
+
+	glUseProgram(programID);
+
 }
 
 void idle()
@@ -100,18 +158,56 @@ void idle()
 
 int main(int argc, char **argv)
 {
-	glutInit(&argc, argv);
-	glutInitDisplayMode(GLUT_DOUBLE | GLUT_RGBA);
-	glutInitWindowSize(800, 600);
-	glutInitWindowPosition(100, 200);
-	glutCreateWindow("Gfx Render");
+	SDL_Window*   mainWindow;
+	SDL_GLContext mainContext;
+	SDL_Event     windowEvents = { 0 };
+
+	SDL_GL_SetAttribute(SDL_GL_DOUBLEBUFFER, 1);
+	SDL_GL_SetAttribute(SDL_GL_DEPTH_SIZE, 24);
+
+
+	bool running = true;
+
+	mainWindow = SDL_CreateWindow("Gfx Render", SDL_WINDOWPOS_CENTERED, 
+		                           SDL_WINDOWPOS_CENTERED, 640, 480, 
+		                           SDL_WINDOW_OPENGL | SDL_WINDOW_SHOWN);
+
+	if (mainWindow == NULL)
+	{
+		SDL_Quit();
+
+		return 1;
+	}
+
+	/* Create our opengl context and attach it to our window */
+	mainContext = SDL_GL_CreateContext(mainWindow);
 
 	initOpenGL();
 
-	glutDisplayFunc(display);
-	glutReshapeFunc(reshape);
-	glutIdleFunc(idle);
-	glutMainLoop();
+	while (running)
+	{
+		while (SDL_PollEvent(&windowEvents))
+		{
+			if (windowEvents.type == SDL_QUIT)
+			{
+				running = false;
+			}
+			else if (windowEvents.type == SDL_KEYDOWN)
+			{
+
+			}
+			else if (windowEvents.type == SDL_MOUSEBUTTONDOWN)
+			{
+
+			}
+		}
+		
+		display();
+
+		SDL_GL_SwapWindow(mainWindow);
+	}
+
+	return 0;
 }
 
 
