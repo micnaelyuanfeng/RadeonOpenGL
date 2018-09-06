@@ -1,4 +1,5 @@
 #include <iostream>
+#include <stdio.h>
 #include <string>
 #include <assert.h>
 #include "GL/glew.h" //should above glut
@@ -18,23 +19,30 @@ const char* VERTEXT11_SHADER =
 
 const char* FRAGMENT_SHADER =
 "#version 330 core\n"
-"in vec3 fragmentColor;\n"
+"in vec2 UV;\n"
+"//in vec3 fragmentColor;\n"
 "out vec3 color;\n"
+"uniform sampler2D myTextureSampler;\n"
 "void main()\n"
 "{\n"
-"color = fragmentColor;\n"
+"color = texture(myTextureSampler, UV).rgb;\n"
+"//color = vec3(UV,0);\n"
+"//color = fragmentColor;\n"
 "}\n";
 
 
 const char* VERTEXT_SHADER =
 "#version 330 core\n"
 "layout(location = 0) in vec3 vertexPosition_modelspace;\n"
-"layout(location = 1) in vec3 vertexColor;\n"
+"//layout(location = 1) in vec3 vertexColor;\n"
+"layout(location = 1) in vec2 vertexUV;\n"
 "uniform mat4 MVP;\n"
-"out vec3 fragmentColor;\n"
+"out vec2 UV;\n"
+"//out vec3 fragmentColor;\n"
 "void main(){\n"
 "gl_Position =  MVP * vec4(vertexPosition_modelspace,1);\n"
-"fragmentColor = vertexColor;\n"
+"UV = vertexUV;\n"
+"//fragmentColor = vertexColor;\n"
 "}\n";
 //linear interpolation is done by gfx card
 
@@ -122,8 +130,117 @@ static const GLfloat colorBufferData[] = {
 						0.982f,  0.099f,  0.879f
 };
 
+static const GLfloat uvBufferData[] = {
+	0.000059f, 1.0f - 0.000004f,
+	0.000103f, 1.0f - 0.336048f,
+	0.335973f, 1.0f - 0.335903f,
+	1.000023f, 1.0f - 0.000013f,
+	0.667979f, 1.0f - 0.335851f,
+	0.999958f, 1.0f - 0.336064f,
+	0.667979f, 1.0f - 0.335851f,
+	0.336024f, 1.0f - 0.671877f,
+	0.667969f, 1.0f - 0.671889f,
+	1.000023f, 1.0f - 0.000013f,
+	0.668104f, 1.0f - 0.000013f,
+	0.667979f, 1.0f - 0.335851f,
+	0.000059f, 1.0f - 0.000004f,
+	0.335973f, 1.0f - 0.335903f,
+	0.336098f, 1.0f - 0.000071f,
+	0.667979f, 1.0f - 0.335851f,
+	0.335973f, 1.0f - 0.335903f,
+	0.336024f, 1.0f - 0.671877f,
+	1.000004f, 1.0f - 0.671847f,
+	0.999958f, 1.0f - 0.336064f,
+	0.667979f, 1.0f - 0.335851f,
+	0.668104f, 1.0f - 0.000013f,
+	0.335973f, 1.0f - 0.335903f,
+	0.667979f, 1.0f - 0.335851f,
+	0.335973f, 1.0f - 0.335903f,
+	0.668104f, 1.0f - 0.000013f,
+	0.336098f, 1.0f - 0.000071f,
+	0.000103f, 1.0f - 0.336048f,
+	0.000004f, 1.0f - 0.671870f,
+	0.336024f, 1.0f - 0.671877f,
+	0.000103f, 1.0f - 0.336048f,
+	0.336024f, 1.0f - 0.671877f,
+	0.335973f, 1.0f - 0.335903f,
+	0.667969f, 1.0f - 0.671889f,
+	1.000004f, 1.0f - 0.671847f,
+	0.667979f, 1.0f - 0.335851f,
+};
+
 GLuint VBOID;       //VBO1
 GLuint colorBuffer; //VBO2
+GLuint uvBuffer;     //VBO3
+
+GLuint loadBMP(const char* imagePath)
+{
+	unsigned char header[54];
+	unsigned int dataPos;
+	unsigned int imageSize;
+	unsigned int width, height;
+	// Actual RGB data
+	unsigned char * data;
+
+	// Open the file
+	FILE* file = fopen(imagePath, "rb");
+
+	if (file == NULL)
+	{
+		assert(0);
+	}
+
+	if (fread(header, 1, 54, file) != 54) {
+		printf("Not a correct BMP file\n");
+		fclose(file);
+		return 0;
+	}
+	// A BMP files always begins with "BM"
+	if (header[0] != 'B' || header[1] != 'M') {
+		printf("Not a correct BMP file\n");
+		fclose(file);
+		return 0;
+	}
+	// Make sure this is a 24bpp file
+	if (*(int*)&(header[0x1E]) != 0) { printf("Not a correct BMP file\n");    fclose(file); return 0; }
+	if (*(int*)&(header[0x1C]) != 24) { printf("Not a correct BMP file\n");    fclose(file); return 0; }
+
+	// Read the information about the image
+	dataPos = *(int*)&(header[0x0A]);
+	imageSize = *(int*)&(header[0x22]);
+	width = *(int*)&(header[0x12]);
+	height = *(int*)&(header[0x16]);
+
+	// Some BMP files are misformatted, guess missing information
+	if (imageSize == 0)    imageSize = width * height * 3; // 3 : one byte for each Red, Green and Blue component
+	if (dataPos == 0)      dataPos = 54; // The BMP header is done that way
+
+	// Create a buffer
+	data = new unsigned char[imageSize];
+
+	// Read the actual data from the file into the buffer
+	fread(data, 1, imageSize, file);
+
+	// Everything is in memory now, the file can be closed.
+	fclose(file);
+
+	GLuint textureId;
+
+	glGenTextures(1, &textureId);
+	glBindTexture(GL_TEXTURE_2D, textureId);
+
+	// Give the image to OpenGL
+	glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, width, height, 0, GL_BGR, GL_UNSIGNED_BYTE, data);
+
+	//delete[] data;
+
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+
+	return textureId;
+}
 
 void display()
 {
@@ -147,16 +264,27 @@ void display()
 	//glColorPointer(3, GL_FLOAT,  6 * sizeof(GLfloat), (GLvoid*)(sizeof(GLfloat) * 3));
 	//Draw shape type
 	//Linear interpolation and restariztion
-
+	
+	//glEnableVertexAttribArray(1);
+	//glBindBuffer(GL_ARRAY_BUFFER, colorBuffer);
+	//glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 0, (void*)0);
+	
 	glEnableVertexAttribArray(1);
-	glBindBuffer(GL_ARRAY_BUFFER, colorBuffer);
-	glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 0, (void*)0);
+	glBindBuffer(GL_ARRAY_BUFFER, uvBuffer);
+	glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, 0, (void*)0);
 
 	glDrawArrays(GL_TRIANGLES, 0, 12 * 3); //send commands to gfx card
 	//glDrawArrays(GL_TRIANGLES, 1, 3);
 	//glDrawArrays(GL_TRIANGLES, 2, 3);
 
 	glDisableVertexAttribArray(0);
+
+	int error = glGetError();
+
+	if (error != 0)
+	{
+		cout<<"error";
+	}
 	//glDisableClientState(GL_VERTEX_ARRAY);
 	//glDisableClientState(GL_COLOR_ARRAY);
 
@@ -196,11 +324,18 @@ void initOpenGL()
 
 	glBindBuffer(GL_ARRAY_BUFFER, 0);
 
-	glGenBuffers(1, &colorBuffer);
-	glBindBuffer(GL_ARRAY_BUFFER, colorBuffer);
-	glBufferData(GL_ARRAY_BUFFER, sizeof(colorBufferData), colorBufferData, GL_STATIC_DRAW);
-	
-	glBindBuffer(GL_ARRAY_BUFFER, 0);
+	//glGenBuffers(1, &colorBuffer);
+	//glBindBuffer(GL_ARRAY_BUFFER, colorBuffer);
+	//glBufferData(GL_ARRAY_BUFFER, sizeof(colorBufferData), colorBufferData, GL_STATIC_DRAW);
+
+	//glBindBuffer(GL_ARRAY_BUFFER, 0);
+
+	glGenBuffers(1, &uvBuffer);
+	glBindBuffer(GL_ARRAY_BUFFER, uvBuffer);
+	glBufferData(GL_ARRAY_BUFFER, sizeof(uvBufferData), uvBufferData, GL_STATIC_DRAW);
+
+	cout << sizeof(uvBufferData) << endl;
+	//glBindBuffer(GL_ARRAY_BUFFER, 0);
 	//unbined buffer
 	//glBindBuffer(GL_ARRAY_BUFFER, 0);
 
@@ -230,6 +365,8 @@ void initOpenGL()
 
 	glAttachShader(programID, VertexShaderID);
 	glAttachShader(programID, FragmentShaderId);
+	//glBindAttribLocation(programID, 0, "vertexPosition_modelspace");
+	//glBindAttribLocation(programID, 1, "vertexUV");
 	glLinkProgram(programID);
 
 	GLuint matrixID = glGetUniformLocation(programID, "MVP");
@@ -246,8 +383,15 @@ void initOpenGL()
 
 	glm::mat4 MVP = projection * view * model;
 
+	GLuint texture = loadBMP("F:\\Projects\\imgs\\amd.bmp");
+	GLuint textureId = glGetUniformLocation(programID, "myTextureSampler");
+
 	glUseProgram(programID);
 	glUniformMatrix4fv(matrixID, 1, GL_FALSE, &MVP[0][0]);
+
+	glActiveTexture(GL_TEXTURE0);
+	glBindTexture(GL_TEXTURE_2D, texture);
+	glUniform1i(textureId, 0);
 }
 
 void idle()
