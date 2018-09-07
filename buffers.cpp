@@ -1,4 +1,5 @@
 #include <iostream>
+#include <fstream>
 #include <stdio.h>
 #include <string>
 #include <assert.h>
@@ -7,6 +8,8 @@
 #include "SDL/SDL.h"
 #include "GLM/glm.hpp"
 #include "GLM/gtc/matrix_transform.hpp"
+
+using namespace std;
 
 const char* VERTEXT11_SHADER =
 "#version 330 core\n"
@@ -172,6 +175,78 @@ static const GLfloat uvBufferData[] = {
 GLuint VBOID;       //VBO1
 GLuint colorBuffer; //VBO2
 GLuint uvBuffer;     //VBO3
+GLuint matrixID;
+
+float       degree          = 0;
+float       scale           = 1.0;
+bool        expandDirection = false;
+const float scale_distance  = 0.05;
+
+glm::mat4 projection;
+glm::mat4 view;
+glm::mat4 model;
+glm::mat4 MVP;
+
+struct verticeCCoordinates
+{
+	float x;
+	float y;
+	float z;
+};
+
+string vertextArray[100];
+string indexArray[100];
+string vertextData[200];
+
+int vindex = 0;
+int iindex = 0;
+
+void readFile()
+{
+	string line;
+
+	ifstream thisFile("F:\\Projects\\imgs\\amd1.obj");
+
+	if (!thisFile.is_open())
+	{
+		cout << "Error" << endl;
+	}
+
+	while (getline(thisFile, line))
+	{
+		if (line.at(0) == 'f' || (line.at(0) == 'v' && line.at(1) != 'n'))
+		{
+			if (line.at(0) == 'f')
+			{
+				vertextArray[vindex] = line;
+				vindex++;
+			}
+			if (line.at(0) == 'v')
+			{
+				indexArray[iindex] = line;
+				iindex++;
+			}
+		}
+	}
+
+	for (int i = 0; i < vindex; i++)
+	{
+		cout << vertextArray[i] << endl;
+		string parsedString;
+		int j,k, w, z;
+		sscanf((char*)vertextArray[i].c_str(), "f %d//%*d %d//%*d %d//%*d %d//%*d", &j, &k, &w, &z);
+		cout << j << " "<< k <<" "<< w <<" "<< z << endl;
+	}
+
+	for (int i = 0; i < iindex; i++)
+	{
+		cout << indexArray[i] << endl;
+	}
+
+
+
+	thisFile.close();
+}
 
 GLuint loadBMP(const char* imagePath)
 {
@@ -244,6 +319,44 @@ GLuint loadBMP(const char* imagePath)
 
 void display()
 {
+	
+
+	glm::vec3 unitVectorX(1.0f, 0.0f, 0.0f);
+	glm::vec3 unitVectorY(0.0f, 1.0f, 0.0f);
+	glm::vec3 unitVectorZ(0.0f, 0.0f, 1.0f);
+	glm::vec3 scaleMatrix(scale, scale, scale);
+	//
+	model = glm::rotate(glm::mat4(1.0),degree, unitVectorY) * glm::scale(glm::mat4(1.0), scaleMatrix);
+
+	MVP = projection * view * model;
+
+	glUniformMatrix4fv(matrixID, 1, GL_FALSE, &MVP[0][0]);
+
+	degree += 0.00005;
+
+	//if (expandDirection == false)
+	//{
+		//scale -= 0.00001;
+	//}
+	//else
+	//{
+		//scale += 0.00001;
+	//}
+	
+
+	if (degree > 360)
+	{
+		degree = 0.0;
+	}
+
+	//if (scale >= 1.5)
+	//{
+		//expandDirection = false;
+	//}
+	//else if (scale <= 1.0)
+	//{
+		//expandDirection = true;
+	//}
 	//For each frame = reset background color defined by glClearColor | depth value
 	//reset for redraw                need to add this if using depth information
 	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
@@ -300,6 +413,7 @@ void initOpenGL()
 	//set background color only
 	glClearColor(0.0f, 0.0f, 0.4f, 0.0f);
 
+	readFile();
 	//Tell ogl use depth information
 	//ogl will do depth test
 	glEnable(GL_DEPTH_TEST);//enable to use depth information, if two objs overlap
@@ -369,19 +483,22 @@ void initOpenGL()
 	//glBindAttribLocation(programID, 1, "vertexUV");
 	glLinkProgram(programID);
 
-	GLuint matrixID = glGetUniformLocation(programID, "MVP");
+	matrixID = glGetUniformLocation(programID, "MVP");
 
-	glm::mat4 projection = glm::perspective(glm::radians(45.0f), 4.0f / 3.0f, 0.01f, 100.0f);
+	//keep constant
+	projection = glm::perspective(glm::radians(45.0f), 4.0f / 3.0f, 0.01f, 100.0f);
 
-	glm::mat4 view = glm::lookAt(
+
+	view = glm::lookAt(
 		glm::vec3(4, 3, 3), // Camera is at (4,3,3), in World Space
 		glm::vec3(0, 0, 0), // and looks at the origin
 		glm::vec3(0, 1, 0)  // Head is up (set to 0,-1,0 to look upside-down)
 	);
 
-	glm::mat4 model = glm::mat4(1.0f);
+	//Scale, translate, and rotate
+	model = glm::mat4(1.0f);
 
-	glm::mat4 MVP = projection * view * model;
+	MVP = projection * view * model;
 
 	GLuint texture = loadBMP("F:\\Projects\\imgs\\amd.bmp");
 	GLuint textureId = glGetUniformLocation(programID, "myTextureSampler");
@@ -404,6 +521,8 @@ int main(int argc, char **argv)
 	SDL_Window*   mainWindow;
 	SDL_GLContext mainContext;
 	SDL_Event     windowEvents = { 0 };
+
+	SDL_Init(SDL_INIT_EVERYTHING);
 
 	SDL_GL_SetAttribute(SDL_GL_DOUBLEBUFFER, 1);
 	SDL_GL_SetAttribute(SDL_GL_DEPTH_SIZE, 24);
@@ -437,11 +556,43 @@ int main(int argc, char **argv)
 			}
 			else if (windowEvents.type == SDL_KEYDOWN)
 			{
-
 			}
 			else if (windowEvents.type == SDL_MOUSEBUTTONDOWN)
 			{
-
+					switch (windowEvents.button.button)
+					{
+					case SDL_BUTTON_LEFT:
+						SDL_ShowSimpleMessageBox(0, "Mouse Button", "Left", mainWindow);
+						break;
+					case SDL_BUTTON_RIGHT:
+						SDL_ShowSimpleMessageBox(0, "Mouse Button", "Right", mainWindow);
+						break;
+					case SDL_BUTTON_MIDDLE:
+						SDL_ShowSimpleMessageBox(0, "Mouse Button", "Middle", mainWindow);
+						break;
+					}
+					break;
+			}
+			else if (windowEvents.type == SDL_MOUSEWHEEL)
+			{
+				if (windowEvents.wheel.x > 0)
+				{
+					SDL_ShowSimpleMessageBox(0, "Mouse Wheel", "Scroll Right", mainWindow);
+				}
+				else if (windowEvents.wheel.x < 0)
+				{
+					SDL_ShowSimpleMessageBox(0, "Mouse Wheel", "Scroll Left", mainWindow);
+				}
+				else if (windowEvents.wheel.y > 0)
+				{
+					scale += 0.015;
+					//SDL_ShowSimpleMessageBox(0, "Mouse Wheel", "Scroll Up", mainWindow);
+				}
+				else if (windowEvents.wheel.y < 0)
+				{
+					scale -= 0.015;
+					//SDL_ShowSimpleMessageBox(0, "Mouse Wheel", "Scroll Down", mainWindow);
+				}
 			}
 		}
 
