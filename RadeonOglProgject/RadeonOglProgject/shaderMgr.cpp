@@ -10,9 +10,10 @@ const char* FRAGMENT_SHADER =
 "in vec3 fragmentColor;\n"
 "out vec3 color;\n"
 "uniform sampler2D myTextureSampler;\n"
+"uniform vec3      Color1;\n"
 "void main()\n"
 "{\n"
-"color = fragmentColor;\n"
+"color = Color1;\n"
 "}\n";
 
 
