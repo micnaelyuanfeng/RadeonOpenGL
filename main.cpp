@@ -112,3 +112,31 @@ int main(int argc, char **argv)
 	3. Near clip plane = closest thing can see
 	4. Far clip plane  = farest thing can see
 */
+
+void renderData::buildNormalBuffers()
+{
+	int numOfEntries = sizeof(verticeData) / (sizeof(float) * 3);
+	
+	GLfloat*   pVerticeData  = verticeData;
+
+	glm::vec3* pNormalBuffer = (glm::vec3*) new glm::vec3[numOfEntries];
+
+	glm::vec3 tempValue;
+	
+
+	for (int i = 0; i < numOfEntries; i++)
+	{
+		tempValue.x = *pVerticeData;
+		tempValue.y = *(++pVerticeData);
+		tempValue.z = *(++pVerticeData);
+
+		pVerticeData++;
+		memcpy((void*)pNormalBuffer, (void*)&tempValue, sizeof(float) * 3);
+
+		cout << pNormalBuffer->x << " " << pNormalBuffer->y << " " << pNormalBuffer->z << endl;
+		cout << endl;
+
+		pNormalBuffer++;
+	}
+
+}
