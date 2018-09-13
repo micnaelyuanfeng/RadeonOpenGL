@@ -55,8 +55,11 @@ public:
 
 	size_t    getSizeVerticeDataGfx(void);
 	size_t    getSizeColorDataGfx(void);
+	size_t    getNumOfEntriesVerticeData(void);
+	size_t    getNumOfEntriesColorData(void);
 
 	void      renderDataInit(void);
+	void      buildNormalBuffers(glm::vec3* inputData, size_t numOfEntries);
 
 private:
 	//GLfloat* verticeData;

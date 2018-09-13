@@ -158,11 +158,13 @@
     <ClCompile Include="locationData.cpp" />
     <ClCompile Include="RadeonOglProgject.cpp" />
     <ClCompile Include="shaderMgr.cpp" />
+    <ClCompile Include="matrixTransform.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="bufferMgr.h" />
     <ClInclude Include="locationData.h" />
     <ClInclude Include="shaderMgr.h" />
+    <ClInclude Include="matrixTransform.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
