@@ -20,19 +20,16 @@ const char* FRAGMENT_SHADER =
 const char* VERTEX_SHADER =
 "#version 330 core\n"
 "layout(location = 0) in vec3 vertexPosition_modelspace;\n"
-"layout(location = 1) in vec3 vertexColor;\n"
+//"layout(location = 1) in vec3 vertexColor;\n"
 
 "uniform mat4 MVP;\n"
 "uniform vec3 LightPosition_worldspace;\n"
 
-"out vec3 fragmentColor;\n"
-"out vec3 Normal_cameraspace;\n"
-"out vec3 EyeDirection_cameraspace;\n"
-"out vec3 LightDirection_cameraspace;\n"
+//"out vec3 fragmentColor;\n"
 
 "void main(){\n"
 "gl_Position =  MVP * vec4(vertexPosition_modelspace,1);\n"
-"fragmentColor = vertexColor;\n"
+//"fragmentColor = vertexColor;\n"
 "}\n";
 
 shaderManager::shaderManager():fileMgr(NULL), shaderIdArray(NULL)

@@ -1,0 +1,10 @@
+﻿  bufferMgr.cpp
+f:\radeonoglprogject\radeonoglprogject\buffermgr.cpp(86): fatal error C1010: unexpected end of file while looking for precompiled header. Did you forget to add '#include "pch.h"' to your source?
+  locationData.cpp
+f:\radeonoglprogject\radeonoglprogject\locationdata.cpp(309): fatal error C1010: unexpected end of file while looking for precompiled header. Did you forget to add '#include "pch.h"' to your source?
+  RadeonOglProgject.cpp
+f:\radeonoglprogject\radeonoglprogject\radeonoglprogject.cpp(221): fatal error C1010: unexpected end of file while looking for precompiled header. Did you forget to add '#include "pch.h"' to your source?
+  shaderMgr.cpp
+f:\radeonoglprogject\radeonoglprogject\shadermgr.cpp(88): fatal error C1010: unexpected end of file while looking for precompiled header. Did you forget to add '#include "pch.h"' to your source?
+  matrixTransform.cpp
+f:\radeonoglprogject\radeonoglprogject\matrixtransform.cpp(89): fatal error C1010: unexpected end of file while looking for precompiled header. Did you forget to add '#include "pch.h"' to your source?

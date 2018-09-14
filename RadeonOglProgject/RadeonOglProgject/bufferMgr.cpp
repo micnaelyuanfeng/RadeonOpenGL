@@ -40,9 +40,9 @@ void bufferShaderManager::createVboBuffer(enum typeId type)
 		glBindBuffer(GL_ARRAY_BUFFER, *thisVboId);
 		glBufferData(GL_ARRAY_BUFFER, renderDataMgr->getSizeVerticeDataGfx(), renderDataMgr->getVerticesDataGfx(), GL_STATIC_DRAW);
 
-		glGenBuffers(1, renderDataMgr->getGfxCardColorBufferId(0));
-		glBindBuffer(GL_ARRAY_BUFFER, *renderDataMgr->getGfxCardColorBufferId(0));
-		glBufferData(GL_ARRAY_BUFFER, renderDataMgr->getSizeColorDataGfx(), renderDataMgr->getColorDataGfx(), GL_STATIC_DRAW);
+		//glGenBuffers(1, renderDataMgr->getGfxCardColorBufferId(0));
+		//glBindBuffer(GL_ARRAY_BUFFER, *renderDataMgr->getGfxCardColorBufferId(0));
+		//glBufferData(GL_ARRAY_BUFFER, renderDataMgr->getSizeColorDataGfx(), renderDataMgr->getColorDataGfx(), GL_STATIC_DRAW);
 		cout << "GFX card color buffer id: " << *renderDataMgr->getGfxCardColorBufferId(0) << endl;
 		cout << "Color data size: " << renderDataMgr->getSizeColorDataGfx() << endl;
 		break;
@@ -79,7 +79,7 @@ void bufferShaderManager::enableVboBuffer(enum typeId type)
 	glBindBuffer(GL_ARRAY_BUFFER, *renderDataMgr->getGfxCardBufferId(0));
 	glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 0, (void*)0);
 
-	glEnableVertexAttribArray(1);
-	glBindBuffer(GL_ARRAY_BUFFER, *renderDataMgr->getGfxCardColorBufferId(0));
-	glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 0, (void*)0);
+	//glEnableVertexAttribArray(1);
+	//glBindBuffer(GL_ARRAY_BUFFER, *renderDataMgr->getGfxCardColorBufferId(0));
+	//glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 0, (void*)0);
 }
